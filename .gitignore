@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+frontend/dist/
+dist/
+build/
+
+# SQLite database files (generated at runtime)
+backend/shopease.db
+backend/shopease.db-shm
+backend/shopease.db-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Uploaded files (generated at runtime) - keep the folder via .gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files - never commit secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Cursor session artifacts
+.cursor/
+terminals/
+agent-transcripts/
+mcps/
