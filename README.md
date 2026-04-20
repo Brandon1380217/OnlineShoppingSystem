@@ -94,7 +94,7 @@ To stop the servers later, press **Ctrl + C** in each terminal.
 | Weird DB errors after schema changes | Delete `backend/shopease.db`, `backend/shopease.db-shm`, `backend/shopease.db-wal`, then run `npm run seed` again. |
 | Uploaded product images disappear after reset | Expected — uploaded files live in `backend/uploads/` and are gitignored. They are per-machine and survive server restarts but are removed when you manually clean that folder. |
 | `node-gyp` / MSBuild errors on `npm install` (Windows) | See the Visual Studio Build Tools note in Prerequisites. |
-| `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch from `better-sqlite3` when running the backend | Your Node.js version changed after `npm install`. Rebuild the native binary against the current Node: `cd backend && npm rebuild better-sqlite3`. |
+| `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch from `better-sqlite3` when running the backend | Your Node.js version changed after `npm install` (or two Node installations are on your machine — e.g. a system Node plus one bundled with an IDE). Rebuild the native binary against the Node you actually run the backend with: open the terminal you use to run `npm run dev`, verify `node -v` matches, then `cd backend && npm rebuild better-sqlite3`. |
 
 ## Demo Accounts
 
@@ -173,8 +173,9 @@ To stop the servers later, press **Ctrl + C** in each terminal.
 │   ├── vite.config.js      # Dev server + proxy for /api and /uploads
 │   └── src/
 │       ├── components/     # Reusable UI (Layout, ProductCard, StarRating, ChatWidget)
-│       ├── context/        # React contexts (Auth, Cart)
+│       ├── context/        # React contexts (Auth, Cart, Currency)
 │       ├── pages/          # Route pages (Home, Products, BusinessDashboard, ...)
+│       ├── utils/          # Helpers (currency rates & formatting)
 │       ├── api.js          # API client + upload helper
 │       └── App.jsx         # Router setup
 ├── .gitignore
