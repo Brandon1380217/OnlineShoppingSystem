@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
 import { CheckCircle, Truck, Zap, Clock, CreditCard, Banknote, ArrowLeft } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const PAYMENT_METHODS = [
 export default function Checkout() {
   const { cart, fetchCart } = useCart();
   const { user } = useAuth();
+  const { format } = useCurrency();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -80,12 +82,12 @@ export default function Checkout() {
           {success.items.map(item => (
             <div key={item.id} className="flex justify-between text-sm py-1.5">
               <span className="text-gray-600">{item.product_name} x{item.quantity}</span>
-              <span className="font-medium">${item.total_price.toFixed(2)}</span>
+              <span className="font-medium">{format(item.total_price)}</span>
             </div>
           ))}
           <div className="border-t mt-3 pt-3 flex justify-between font-bold">
             <span>Total</span>
-            <span>${success.order.total.toFixed(2)}</span>
+            <span>{format(success.order.total)}</span>
           </div>
         </div>
         <div className="flex gap-3 justify-center">
@@ -172,7 +174,7 @@ export default function Checkout() {
                         <p className="text-xs text-gray-500">{method.desc}</p>
                       </div>
                       <span className="font-semibold text-sm">
-                        {isFree ? <span className="text-green-600">Free</span> : `$${method.price.toFixed(2)}`}
+                        {isFree ? <span className="text-green-600">Free</span> : format(method.price)}
                       </span>
                     </label>
                   );
@@ -241,7 +243,7 @@ export default function Checkout() {
                         <p className="text-sm font-medium line-clamp-1">{item.name}</p>
                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-medium">${(price * item.quantity).toFixed(2)}</p>
+                      <p className="text-sm font-medium">{format(price * item.quantity)}</p>
                     </div>
                   );
                 })}
@@ -249,24 +251,24 @@ export default function Checkout() {
               <div className="space-y-2 text-sm border-t pt-4">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Subtotal</span>
-                  <span>${cart.summary.subtotal.toFixed(2)}</span>
+                  <span>{format(cart.summary.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Shipping</span>
-                  <span>{shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? 'Free' : format(shippingCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{format(tax)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{format(total)}</span>
                 </div>
               </div>
               <button type="submit" disabled={loading} onClick={handleSubmit}
                 className="btn-primary w-full mt-4">
-                {loading ? 'Processing...' : `Place Order - $${total.toFixed(2)}`}
+                {loading ? 'Processing...' : `Place Order - ${format(total)}`}
               </button>
             </div>
           </div>

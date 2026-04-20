@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
 import { Shield, Users, Package, DollarSign, ShoppingBag, Search, Edit, Trash2, Plus, XCircle, UserPlus } from 'lucide-react';
 
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
 
 function AdminOverview() {
   const [stats, setStats] = useState(null);
+  const { format } = useCurrency();
   useEffect(() => { api.admin.stats().then(setStats); }, []);
 
   if (!stats) return <div className="animate-pulse space-y-4"><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl" />)}</div></div>;
@@ -52,7 +54,7 @@ function AdminOverview() {
     { label: 'Business', value: stats.business_count, icon: ShoppingBag, color: 'bg-purple-50 text-purple-600' },
     { label: 'Admins', value: stats.admin_count, icon: Shield, color: 'bg-red-50 text-red-600' },
     { label: 'Total Orders', value: stats.total_orders, icon: Package, color: 'bg-orange-50 text-orange-600' },
-    { label: 'Total Revenue', value: `$${stats.total_revenue.toLocaleString()}`, icon: DollarSign, color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Total Revenue', value: format(stats.total_revenue), icon: DollarSign, color: 'bg-emerald-50 text-emerald-600' },
     { label: 'Active Products', value: stats.total_products, icon: ShoppingBag, color: 'bg-cyan-50 text-cyan-600' },
   ];
 

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import StarRating from '../components/StarRating';
 import ProductCard from '../components/ProductCard';
 import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Check, Minus, Plus, ChevronRight, Clock, Package, Store } from 'lucide-react';
@@ -11,6 +12,7 @@ export default function ProductDetail() {
   const { slug } = useParams();
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const { format } = useCurrency();
   const navigate = useNavigate();
 
   const [data, setData] = useState(null);
@@ -119,10 +121,10 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-3xl font-bold text-gray-900">${displayPrice.toFixed(2)}</span>
+            <span className="text-3xl font-bold text-gray-900">{format(displayPrice)}</span>
             {(product.compare_at_price || (product.is_deal && product.deal_discount > 0)) && (
               <>
-                <span className="text-lg text-gray-400 line-through">${(product.compare_at_price || product.price).toFixed(2)}</span>
+                <span className="text-lg text-gray-400 line-through">{format(product.compare_at_price || product.price)}</span>
                 {product.is_deal && product.deal_discount > 0 && (
                   <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-semibold rounded">
                     Save {product.deal_discount}%
@@ -159,7 +161,7 @@ export default function ProductDetail() {
                       selectedVariant?.id === v.id ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 hover:border-gray-300'
                     }`}>
                     {v.name}
-                    {v.price && v.price !== product.price && <span className="ml-1 text-gray-500">(${v.price.toFixed(2)})</span>}
+                    {v.price && v.price !== product.price && <span className="ml-1 text-gray-500">({format(v.price)})</span>}
                   </button>
                 ))}
               </div>

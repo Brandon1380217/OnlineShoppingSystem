@@ -1,23 +1,27 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
-import { ShoppingCart, User, Search, Menu, X, Package, LogOut, BarChart3, ChevronDown, Store, Bell, Heart, Shield } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, Package, LogOut, BarChart3, ChevronDown, Store, Bell, Heart, Shield, Globe } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const { cart } = useCart();
+  const { currency, setCurrency, currencies } = useCurrency();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const userMenuRef = useRef(null);
   const notifRef = useRef(null);
+  const currencyRef = useRef(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -39,6 +43,7 @@ export default function Layout({ children }) {
     const handler = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (currencyRef.current && !currencyRef.current.contains(e.target)) setCurrencyOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -97,6 +102,34 @@ export default function Layout({ children }) {
             </nav>
 
             <div className="flex items-center gap-1">
+              {/* Currency selector */}
+              <div className="relative" ref={currencyRef}>
+                <button onClick={() => setCurrencyOpen(!currencyOpen)}
+                  className="flex items-center gap-1 px-2.5 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  title="Change currency">
+                  <Globe className="w-4 h-4" />
+                  <span className="hidden sm:block font-semibold">{currency}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {currencyOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    <p className="px-4 py-1 text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Display currency</p>
+                    {Object.values(currencies).map(c => (
+                      <button key={c.code}
+                        onClick={() => { setCurrency(c.code); setCurrencyOpen(false); }}
+                        className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === c.code ? 'text-brand-600 font-semibold bg-brand-50/40' : 'text-gray-700'}`}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-8 text-left">{c.symbol}</span>
+                          <span>{c.code}</span>
+                        </span>
+                        <span className="text-xs text-gray-400">{c.name}</span>
+                      </button>
+                    ))}
+                    <p className="px-4 pt-2 pb-1 text-[10px] text-gray-400 border-t border-gray-50 mt-1">Prices are stored in HKD and converted using static demo rates.</p>
+                  </div>
+                )}
+              </div>
+
               {user ? (
                 <>
                   {/* Notifications */}

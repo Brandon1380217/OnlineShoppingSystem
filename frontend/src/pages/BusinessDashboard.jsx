@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
 import {
   BarChart3, Package, DollarSign, Users, TrendingUp, ShoppingBag, Clock, AlertTriangle,
@@ -74,6 +75,7 @@ export default function BusinessDashboard() {
 function OverviewTab() {
   const [overview, setOverview] = useState(null);
   const [sales, setSales] = useState(null);
+  const { format } = useCurrency();
 
   useEffect(() => {
     api.business.analyticsOverview().then(setOverview);
@@ -83,10 +85,10 @@ function OverviewTab() {
   if (!overview) return <LoadingSkeleton />;
 
   const stats = [
-    { label: 'Total Revenue', value: `$${overview.total_revenue.toLocaleString()}`, icon: DollarSign, color: 'bg-green-50 text-green-600' },
+    { label: 'Total Revenue', value: format(overview.total_revenue), icon: DollarSign, color: 'bg-green-50 text-green-600' },
     { label: 'Total Orders', value: overview.total_orders, icon: Package, color: 'bg-blue-50 text-blue-600' },
     { label: 'Customers', value: overview.total_customers, icon: Users, color: 'bg-purple-50 text-purple-600' },
-    { label: 'Avg Order Value', value: `$${overview.avg_order_value.toFixed(2)}`, icon: TrendingUp, color: 'bg-orange-50 text-orange-600' },
+    { label: 'Avg Order Value', value: format(overview.avg_order_value), icon: TrendingUp, color: 'bg-orange-50 text-orange-600' },
     { label: 'Pending Orders', value: overview.pending_orders, icon: Clock, color: 'bg-yellow-50 text-yellow-600' },
     { label: 'Pending Returns', value: overview.pending_returns, icon: AlertTriangle, color: 'bg-red-50 text-red-600' },
   ];
@@ -113,8 +115,8 @@ function OverviewTab() {
               <LineChart data={sales.sales_by_day}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                <Tooltip formatter={(v) => `$${v.toFixed(2)}`} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
+                <Tooltip formatter={(v) => format(v)} />
                 <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -127,7 +129,7 @@ function OverviewTab() {
                 <Pie data={sales.revenue_by_category} dataKey="revenue" nameKey="category" cx="50%" cy="50%" outerRadius={80} label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}>
                   {sales.revenue_by_category.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v) => `$${v.toFixed(2)}`} />
+                <Tooltip formatter={(v) => format(v)} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -159,7 +161,7 @@ function OverviewTab() {
                     <span className="text-sm font-medium truncate max-w-[200px]">{p.product_name}</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold">${p.total_revenue.toFixed(2)}</p>
+                    <p className="text-sm font-bold">{format(p.total_revenue)}</p>
                     <p className="text-xs text-gray-500">{p.total_sold} units</p>
                   </div>
                 </div>
@@ -173,6 +175,7 @@ function OverviewTab() {
 }
 
 function OrdersTab() {
+  const { format } = useCurrency();
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [loading, setLoading] = useState(true);
@@ -320,7 +323,7 @@ function OrdersTab() {
                       {order.payment_status}
                     </span>
                   </td>
-                  <td className="p-3 text-right font-medium">${order.total.toFixed(2)}</td>
+                  <td className="p-3 text-right font-medium">{format(order.total)}</td>
                   <td className="p-3 text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
                   <td className="p-3">
                     <div className="flex gap-1">
@@ -420,20 +423,20 @@ function OrdersTab() {
                         </p>
                       </div>
                     </div>
-                    <span className="font-medium">${item.total_price.toFixed(2)}</span>
+                    <span className="font-medium">{format(item.total_price)}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm space-y-1">
-              <div className="flex justify-between"><span>Subtotal</span><span>${orderDetail.order.subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Shipping</span><span>${orderDetail.order.shipping_cost.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Tax</span><span>${orderDetail.order.tax.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{format(orderDetail.order.subtotal)}</span></div>
+              <div className="flex justify-between"><span>Shipping</span><span>{format(orderDetail.order.shipping_cost)}</span></div>
+              <div className="flex justify-between"><span>Tax</span><span>{format(orderDetail.order.tax)}</span></div>
               {orderDetail.order.discount > 0 && (
-                <div className="flex justify-between text-green-600"><span>Discount</span><span>-${orderDetail.order.discount.toFixed(2)}</span></div>
+                <div className="flex justify-between text-green-600"><span>Discount</span><span>-{format(orderDetail.order.discount)}</span></div>
               )}
-              <div className="flex justify-between font-bold border-t pt-1"><span>Total</span><span>${orderDetail.order.total.toFixed(2)}</span></div>
+              <div className="flex justify-between font-bold border-t pt-1"><span>Total</span><span>{format(orderDetail.order.total)}</span></div>
             </div>
           </div>
         </div>
@@ -443,6 +446,7 @@ function OrdersTab() {
 }
 
 function ProductsTab() {
+  const { format } = useCurrency();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -578,7 +582,7 @@ function ProductsTab() {
                         onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) })}
                         className="input-field text-sm !py-1 !w-24" />
                     ) : (
-                      <span className="font-medium">${p.price.toFixed(2)}</span>
+                      <span className="font-medium">{format(p.price)}</span>
                     )}
                   </td>
                   <td className="p-3 text-right">
@@ -945,6 +949,7 @@ function MessagesTab() {
 }
 
 function InvoicesTab() {
+  const { format } = useCurrency();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -988,7 +993,7 @@ function InvoicesTab() {
                 <td className="p-3 font-mono text-xs font-medium">{inv.invoice_number}</td>
                 <td className="p-3 font-mono text-xs">{inv.order_number}</td>
                 <td className="p-3">{inv.customer_first_name} {inv.customer_last_name}</td>
-                <td className="p-3 text-right font-medium">${inv.amount.toFixed(2)}</td>
+                <td className="p-3 text-right font-medium">{format(inv.amount)}</td>
                 <td className="p-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                     inv.status === 'paid' ? 'bg-green-100 text-green-700' :
@@ -1008,6 +1013,7 @@ function InvoicesTab() {
 }
 
 function ReturnsTab() {
+  const { format } = useCurrency();
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1061,7 +1067,7 @@ function ReturnsTab() {
                 <td className="p-3 font-mono text-xs">{ret.order_number}</td>
                 <td className="p-3">{ret.customer_first_name} {ret.customer_last_name}</td>
                 <td className="p-3 text-gray-500 max-w-[200px] truncate">{ret.reason}</td>
-                <td className="p-3 text-right font-medium">${ret.refund_amount?.toFixed(2) || '-'}</td>
+                <td className="p-3 text-right font-medium">{ret.refund_amount != null ? format(ret.refund_amount) : '-'}</td>
                 <td className="p-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${RETURN_STATUS_COLORS[ret.status] || ''}`}>
                     {ret.status}
@@ -1115,6 +1121,7 @@ function ReturnsTab() {
 }
 
 function AnalyticsTab() {
+  const { format } = useCurrency();
   const [sales, setSales] = useState(null);
   const [period, setPeriod] = useState('30');
 
@@ -1144,8 +1151,8 @@ function AnalyticsTab() {
             <BarChart data={sales.sales_by_day}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-              <Tooltip formatter={(v) => `$${Number(v).toFixed(2)}`} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
+              <Tooltip formatter={(v) => format(Number(v))} />
               <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -1169,9 +1176,9 @@ function AnalyticsTab() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={sales.revenue_by_category} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
               <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v) => `$${Number(v).toFixed(2)}`} />
+              <Tooltip formatter={(v) => format(Number(v))} />
               <Bar dataKey="revenue" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
                 {sales.revenue_by_category.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Bar>
@@ -1187,7 +1194,7 @@ function AnalyticsTab() {
                 label={({ channel, percent }) => `${channel} ${(percent * 100).toFixed(0)}%`}>
                 {sales.orders_by_channel.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v) => `$${Number(v).toFixed(2)}`} />
+              <Tooltip formatter={(v) => format(Number(v))} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -1210,7 +1217,7 @@ function AnalyticsTab() {
                     <td className="p-2 font-medium text-gray-500">{i + 1}</td>
                     <td className="p-2 font-medium">{p.product_name}</td>
                     <td className="p-2 text-right">{p.total_sold}</td>
-                    <td className="p-2 text-right font-medium">${p.total_revenue.toFixed(2)}</td>
+                    <td className="p-2 text-right font-medium">{format(p.total_revenue)}</td>
                   </tr>
                 ))}
               </tbody>

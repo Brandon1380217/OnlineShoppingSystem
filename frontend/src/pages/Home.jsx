@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import ProductCard from '../components/ProductCard';
+import { useCurrency } from '../context/CurrencyContext';
 import { ArrowRight, Truck, Shield, RotateCcw, Sparkles, Flame, Tag, Clock } from 'lucide-react';
 
 export default function Home() {
+  const { format } = useCurrency();
   const [deals, setDeals] = useState([]);
   const [popular, setPopular] = useState([]);
   const [newReleases, setNewReleases] = useState([]);
@@ -46,7 +48,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Truck, title: 'Free Shipping', desc: 'On orders over $50' },
+              { icon: Truck, title: 'Free Shipping', desc: `On orders over ${format(50)}` },
               { icon: Shield, title: 'Secure Payments', desc: 'Encrypted transactions' },
               { icon: RotateCcw, title: 'Easy Returns', desc: '30-day return policy' },
               { icon: Sparkles, title: 'Member Deals', desc: 'Exclusive discounts' },

@@ -94,6 +94,7 @@ To stop the servers later, press **Ctrl + C** in each terminal.
 | Weird DB errors after schema changes | Delete `backend/shopease.db`, `backend/shopease.db-shm`, `backend/shopease.db-wal`, then run `npm run seed` again. |
 | Uploaded product images disappear after reset | Expected — uploaded files live in `backend/uploads/` and are gitignored. They are per-machine and survive server restarts but are removed when you manually clean that folder. |
 | `node-gyp` / MSBuild errors on `npm install` (Windows) | See the Visual Studio Build Tools note in Prerequisites. |
+| `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch from `better-sqlite3` when running the backend | Your Node.js version changed after `npm install`. Rebuild the native binary against the current Node: `cd backend && npm rebuild better-sqlite3`. |
 
 ## Demo Accounts
 
@@ -116,6 +117,7 @@ To stop the servers later, press **Ctrl + C** in each terminal.
 6. **Order History** - View past orders with status tracking, cancel, return, and reorder functionality
 7. **Shop Reviews & Ratings** - Rate and comment on shops after purchasing from them, with a star breakdown; reviews are **final** (cannot be edited or deleted once submitted)
 8. **Live Chat with Shops** - Floating chat widget with polling-based "real-time" messaging, preset quick questions, and unread indicators
+9. **Multi-Currency Display** - Switch the storefront between **HKD** (default), **USD**, **GBP**, and **EUR** from the header; the selection is remembered in `localStorage` and applied site-wide (product cards, cart, checkout, orders, and dashboards)
 
 ### Business Side
 

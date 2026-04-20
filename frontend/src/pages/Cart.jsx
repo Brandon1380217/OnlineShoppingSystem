@@ -1,12 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Cart() {
   const { cart, updateQuantity, removeItem, clearCart, loading } = useCart();
   const { user } = useAuth();
+  const { format } = useCurrency();
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(null);
 
@@ -77,7 +79,7 @@ export default function Cart() {
                       </Link>
                       {item.variant_name && <p className="text-sm text-gray-500 mt-0.5">{item.variant_name}</p>}
                     </div>
-                    <p className="text-lg font-bold text-gray-900 shrink-0">${(price * item.quantity).toFixed(2)}</p>
+                    <p className="text-lg font-bold text-gray-900 shrink-0">{format(price * item.quantity)}</p>
                   </div>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border border-gray-200 rounded-lg">
@@ -92,7 +94,7 @@ export default function Cart() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-500">${price.toFixed(2)} each</span>
+                      <span className="text-sm text-gray-500">{format(price)} each</span>
                       <button onClick={() => handleRemove(item.id)} disabled={removing === item.id}
                         className="text-red-500 hover:text-red-700 p-1 transition-colors">
                         <Trash2 className="w-4 h-4" />
@@ -112,23 +114,23 @@ export default function Cart() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal</span>
-                <span className="font-medium">${cart.summary.subtotal.toFixed(2)}</span>
+                <span className="font-medium">{format(cart.summary.subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Shipping</span>
-                <span className="font-medium">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                <span className="font-medium">{shipping === 0 ? 'Free' : format(shipping)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Tax (8%)</span>
-                <span className="font-medium">${tax.toFixed(2)}</span>
+                <span className="font-medium">{format(tax)}</span>
               </div>
               <div className="border-t pt-3 flex justify-between">
                 <span className="font-bold text-lg">Total</span>
-                <span className="font-bold text-lg">${total.toFixed(2)}</span>
+                <span className="font-bold text-lg">{format(total)}</span>
               </div>
             </div>
             {shipping > 0 && (
-              <p className="text-xs text-green-600 mt-3">Add ${(50 - cart.summary.subtotal).toFixed(2)} more for free shipping!</p>
+              <p className="text-xs text-green-600 mt-3">Add {format(Math.max(0, 50 - cart.summary.subtotal))} more for free shipping!</p>
             )}
             <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-4 flex items-center justify-center gap-2">
               Proceed to Checkout <ArrowRight className="w-4 h-4" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
 import { Package, Truck, CheckCircle, Clock, XCircle, RotateCcw, RefreshCw, Eye, ShoppingCart, ThumbsUp } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const STATUS_CONFIG = {
 
 export default function Orders() {
   const { user } = useAuth();
+  const { format } = useCurrency();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export default function Orders() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${order.total.toFixed(2)}</p>
+                      <p className="font-bold">{format(order.total)}</p>
                       <p className="text-xs text-gray-500">{order.shipping_method} shipping</p>
                     </div>
                   </div>
@@ -210,9 +212,9 @@ export default function Orders() {
                                 onError={(e) => { e.target.src = 'https://via.placeholder.com/100?text=N/A'; }} />
                               <div className="flex-1">
                                 <p className="font-medium text-sm">{item.product_name}</p>
-                                <p className="text-xs text-gray-500">Qty: {item.quantity} x ${item.unit_price.toFixed(2)}</p>
+                                <p className="text-xs text-gray-500">Qty: {item.quantity} x {format(item.unit_price)}</p>
                               </div>
-                              <p className="font-medium text-sm">${item.total_price.toFixed(2)}</p>
+                              <p className="font-medium text-sm">{format(item.total_price)}</p>
                             </div>
                           ))}
                         </div>
@@ -229,11 +231,11 @@ export default function Orders() {
                         <div>
                           <h4 className="font-semibold text-sm mb-2">Payment</h4>
                           <div className="text-sm space-y-1">
-                            <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>${orderDetail.order.subtotal.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{orderDetail.order.shipping_cost === 0 ? 'Free' : `$${orderDetail.order.shipping_cost.toFixed(2)}`}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Tax</span><span>${orderDetail.order.tax.toFixed(2)}</span></div>
-                            {orderDetail.order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${orderDetail.order.discount.toFixed(2)}</span></div>}
-                            <div className="flex justify-between font-bold border-t pt-1"><span>Total</span><span>${orderDetail.order.total.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{format(orderDetail.order.subtotal)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{orderDetail.order.shipping_cost === 0 ? 'Free' : format(orderDetail.order.shipping_cost)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Tax</span><span>{format(orderDetail.order.tax)}</span></div>
+                            {orderDetail.order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{format(orderDetail.order.discount)}</span></div>}
+                            <div className="flex justify-between font-bold border-t pt-1"><span>Total</span><span>{format(orderDetail.order.total)}</span></div>
                           </div>
                         </div>
                         <div>

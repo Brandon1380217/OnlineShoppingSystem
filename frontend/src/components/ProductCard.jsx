@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
-import { ShoppingCart, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function ProductCard({ product }) {
+  const { format } = useCurrency();
   const isComingSoon = new Date(product.release_date) > new Date();
   const effectivePrice = product.is_deal && product.deal_discount > 0
     ? product.price * (1 - product.deal_discount / 100)
@@ -38,10 +40,10 @@ export default function ProductCard({ product }) {
         </h3>
         <StarRating rating={product.rating} count={product.review_count} />
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-lg font-bold text-gray-900">${effectivePrice.toFixed(2)}</span>
+          <span className="text-lg font-bold text-gray-900">{format(effectivePrice)}</span>
           {(product.compare_at_price || (product.is_deal && product.deal_discount > 0)) && (
             <span className="text-sm text-gray-400 line-through">
-              ${(product.compare_at_price || product.price).toFixed(2)}
+              {format(product.compare_at_price || product.price)}
             </span>
           )}
         </div>
