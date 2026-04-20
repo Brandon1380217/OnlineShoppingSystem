@@ -345,9 +345,17 @@ router.put('/products/:id', (req, res) => {
     const oldPrice = product.price;
     const oldDiscount = product.deal_discount;
 
-    const imagesJson = images !== undefined
-      ? (Array.isArray(images) ? JSON.stringify(images) : images)
-      : null;
+    let imagesJson = null;
+    if (images !== undefined) {
+      imagesJson = Array.isArray(images) ? JSON.stringify(images) : images;
+    } else if (image_url && image_url !== product.image_url) {
+      // Primary image changed but caller didn't send a full gallery update.
+      // Keep the gallery in sync so product detail reflects the new photo.
+      let existing = [];
+      try { existing = product.images ? JSON.parse(product.images) : []; } catch { existing = []; }
+      const nextList = [image_url, ...existing.filter(u => u && u !== product.image_url && u !== image_url)];
+      imagesJson = JSON.stringify(nextList);
+    }
 
     db.prepare(`
       UPDATE products SET name = COALESCE(?, name), description = COALESCE(?, description),

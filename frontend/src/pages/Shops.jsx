@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -53,6 +53,8 @@ export function ShopsList() {
 
 export function ShopDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const autoOpenChat = searchParams.get('openChat') === '1';
   const { user } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -259,7 +261,7 @@ export function ShopDetail() {
         </div>
       )}
 
-      <ChatWidget shop={shop} />
+      <ChatWidget shop={shop} autoOpen={autoOpenChat} />
     </div>
   );
 }

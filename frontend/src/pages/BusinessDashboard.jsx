@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { api } from '../api';
@@ -20,24 +20,61 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: TrendingUp },
 ];
 
+// Design-system token values — keep in sync with tailwind.config.js / DESIGN_SYSTEM.md.
+// Primary=#4762E9, Secondary=#13B5A1, Accent=#FF6B3D, Warning=#F5A623,
+// Error=#E5484D, Info=#2E86F5, plus primary/secondary tints for variety.
 const STATUS_COLORS = {
-  pending: '#f59e0b', confirmed: '#3b82f6', processing: '#6366f1', packed: '#8b5cf6',
-  shipped: '#06b6d4', out_for_delivery: '#14b8a6', delivered: '#22c55e',
-  cancelled: '#ef4444', returned: '#f97316', refunded: '#6b7280'
+  pending:          '#F5A623', // warning-500
+  confirmed:        '#2E86F5', // info-500
+  processing:       '#4762E9', // primary-500
+  packed:           '#6682F3', // primary-400
+  shipped:          '#13B5A1', // secondary-500
+  out_for_delivery: '#36CAB6', // secondary-400
+  delivered:        '#1DB954', // success-500
+  cancelled:        '#E5484D', // error-500
+  returned:         '#FF6B3D', // accent-500
+  refunded:         '#6B6963', // neutral-500
 };
 
-const PIE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1'];
+const PIE_COLORS = [
+  '#4762E9', // primary-500
+  '#13B5A1', // secondary-500
+  '#FF6B3D', // accent-500
+  '#F5A623', // warning-500
+  '#2E86F5', // info-500
+  '#6682F3', // primary-400
+  '#36CAB6', // secondary-400
+  '#FF8F6E', // accent-400
+];
 
 export default function BusinessDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = TABS.some(t => t.id === searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const focusConversationId = searchParams.get('conversation');
 
   useEffect(() => {
     if (!user || (user.role !== 'business' && user.role !== 'admin')) {
       navigate('/');
     }
   }, [user]);
+
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && urlTab !== activeTab && TABS.some(t => t.id === urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
+  const switchTab = (tabId) => {
+    setActiveTab(tabId);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', tabId);
+    if (tabId !== 'messages') next.delete('conversation');
+    setSearchParams(next, { replace: true });
+  };
 
   if (!user || (user.role !== 'business' && user.role !== 'admin')) return null;
 
@@ -52,7 +89,7 @@ export default function BusinessDashboard() {
 
       <div className="flex gap-1 mb-6 overflow-x-auto border-b border-gray-200">
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button key={tab.id} onClick={() => switchTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab.id ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}>
@@ -64,7 +101,7 @@ export default function BusinessDashboard() {
       {activeTab === 'overview' && <OverviewTab />}
       {activeTab === 'orders' && <OrdersTab />}
       {activeTab === 'products' && <ProductsTab />}
-      {activeTab === 'messages' && <MessagesTab />}
+      {activeTab === 'messages' && <MessagesTab focusConversationId={focusConversationId} />}
       {activeTab === 'invoices' && <InvoicesTab />}
       {activeTab === 'returns' && <ReturnsTab />}
       {activeTab === 'analytics' && <AnalyticsTab />}
@@ -117,7 +154,7 @@ function OverviewTab() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
                 <Tooltip formatter={(v) => format(v)} />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="revenue" stroke="#4762E9" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -142,9 +179,9 @@ function OverviewTab() {
                 <XAxis dataKey="status" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" fill="#4762E9" radius={[4, 4, 0, 0]}>
                   {sales.orders_by_status.map((entry, i) => (
-                    <Cell key={i} fill={STATUS_COLORS[entry.status] || '#6b7280'} />
+                    <Cell key={i} fill={STATUS_COLORS[entry.status] || '#6B6963'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -772,7 +809,7 @@ function AddProductModal({ categories, brands, onClose, onCreated }) {
   );
 }
 
-function MessagesTab() {
+function MessagesTab({ focusConversationId } = {}) {
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -781,13 +818,15 @@ function MessagesTab() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef(null);
+  const focusHandledRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
     try {
       const [data, p] = await Promise.all([api.chats.list(), api.chats.presets().catch(() => ({ presets: [] }))]);
       setConversations(data.conversations);
       setPresets(p.presets || []);
-    } catch { /* ignore */ }
+      return data.conversations;
+    } catch { return []; }
     finally { setLoading(false); }
   }, []);
 
@@ -797,14 +836,25 @@ function MessagesTab() {
     return () => clearInterval(t);
   }, [loadConversations]);
 
-  const openConversation = async (conv) => {
+  const openConversation = useCallback(async (conv) => {
     setSelected(conv);
     try {
       const data = await api.chats.messages(conv.id);
       setMessages(data.messages);
       await loadConversations();
     } catch { /* ignore */ }
-  };
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (!focusConversationId || focusHandledRef.current === focusConversationId) return;
+    const convIdNum = parseInt(focusConversationId, 10);
+    if (!convIdNum) return;
+    const found = conversations.find(c => c.id === convIdNum);
+    if (found) {
+      focusHandledRef.current = focusConversationId;
+      openConversation(found);
+    }
+  }, [focusConversationId, conversations, openConversation]);
 
   useEffect(() => {
     if (!selected) return;
@@ -1153,7 +1203,7 @@ function AnalyticsTab() {
               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
               <Tooltip formatter={(v) => format(Number(v))} />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#4762E9" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -1166,7 +1216,7 @@ function AnalyticsTab() {
               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(5)} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="order_count" stroke="#22c55e" strokeWidth={2} />
+              <Line type="monotone" dataKey="order_count" stroke="#13B5A1" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -1179,7 +1229,7 @@ function AnalyticsTab() {
               <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => format(v, { decimals: 0, compact: true })} />
               <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => format(Number(v))} />
-              <Bar dataKey="revenue" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="revenue" fill="#FF6B3D" radius={[0, 4, 4, 0]}>
                 {sales.revenue_by_category.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Bar>
             </BarChart>

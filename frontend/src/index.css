@@ -1,30 +1,138 @@
+/* Google Fonts: Fraunces (display) + Inter (body) + JetBrains Mono (numerics)
+   Loaded with font-display: swap via &display=swap query parameter. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+ * Design tokens exposed as CSS variables, so non-Tailwind call-sites
+ * (inline styles, third-party widgets, Recharts) can reference them.
+ * Source of truth for the palette remains DESIGN_SYSTEM.md / tailwind.config.js.
+ * ------------------------------------------------------------------ */
+:root {
+  --color-bg:          #FFFFFF;
+  --color-surface:     #FFFFFF;
+  --color-surface-2:   #F8F8F7;
+  --color-text:        #34332F;
+  --color-text-muted:  #6B6963;
+  --color-border:      #E5E3DF;
+
+  --color-primary:     #4762E9;
+  --color-primary-hover:#3548D0;
+  --color-primary-fg:  #FFFFFF;
+  --color-accent:      #FF6B3D;
+  --color-success:     #1DB954;
+  --color-warning:     #F5A623;
+  --color-error:       #E5484D;
+  --color-info:        #2E86F5;
+
+  --radius-card:       20px;
+  --radius-btn:        14px;
+
+  --shadow-card:       0 1px 3px rgba(16,18,36,.06), 0 1px 2px rgba(16,18,36,.04);
+  --shadow-lift:       0 8px 24px -8px rgba(16,18,36,.12), 0 2px 6px rgba(16,18,36,.06);
+
+  --duration-fast:     150ms;
+  --duration-base:     220ms;
+  --duration-slow:     320ms;
+  --ease-standard:     cubic-bezier(0.2, 0, 0, 1);
+  --ease-decel:        cubic-bezier(0, 0, 0.2, 1);
+}
+
+html.dark {
+  --color-bg:          #0F0F0E;
+  --color-surface:     #1A1A18;
+  --color-surface-2:   #232320;
+  --color-text:        #F2F1EE;
+  --color-text-muted:  #A09E98;
+  --color-border:      #2E2D2A;
+
+  --color-primary:     #6682F3;
+  --color-primary-hover:#91A6F9;
+  --color-primary-fg:  #0F0F0E;
+  --color-accent:      #FF8F6E;
+
+  --shadow-card:       0 1px 3px rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-lift:       0 8px 24px -8px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+}
+
 @layer base {
-  * {
-    box-sizing: border-box;
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply font-sans text-neutral-700 antialiased;
+    font-feature-settings: 'ss01', 'cv05', 'cv11';
+    background-color: var(--color-bg);
+    color: var(--color-text);
   }
-  html {
-    scroll-behavior: smooth;
+  h1, h2 { @apply font-display; letter-spacing: -0.02em; }
+  h3, h4, h5, h6 { @apply font-sans; }
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(71, 98, 233, 0.30);
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-brand-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary-500 text-white px-6 py-2.5 rounded-lg font-medium
+      hover:bg-primary-600 active:bg-primary-700
+      transition-colors duration-base ease-standard
+      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply bg-white text-gray-700 px-6 py-2.5 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+    @apply bg-white text-neutral-700 px-6 py-2.5 rounded-lg font-medium border border-neutral-200
+      hover:bg-neutral-50 active:bg-neutral-100
+      dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-700
+      dark:hover:bg-neutral-700 dark:active:bg-neutral-600
+      transition-colors duration-base ease-standard
+      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
   .btn-danger {
-    @apply bg-red-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+    @apply bg-error-500 text-white px-6 py-2.5 rounded-lg font-medium
+      hover:bg-error-700 transition-colors duration-base ease-standard
+      focus:outline-none focus:ring-2 focus:ring-error-500 focus:ring-offset-2;
+  }
+  .btn-accent {
+    @apply bg-accent-500 text-white px-6 py-3 rounded-lg font-semibold
+      hover:bg-accent-600 active:bg-accent-700
+      transition-all duration-base ease-standard
+      focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2;
   }
   .input-field {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors;
+    @apply w-full px-4 py-2.5 border border-neutral-200 rounded-md text-neutral-700
+      placeholder:text-neutral-400
+      dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-100
+      dark:placeholder:text-neutral-500
+      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+      transition-colors duration-fast ease-standard;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+    @apply bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden
+      dark:bg-neutral-900 dark:border-neutral-800;
+  }
+  .card-lift {
+    @apply card transition-all duration-base ease-standard
+      hover:-translate-y-0.5 hover:shadow-md;
+  }
+  .badge-soft {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold
+      bg-primary-100 text-primary-700;
+  }
+  .badge-solid-accent {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold
+      bg-accent-500 text-white shadow-sm;
   }
 }

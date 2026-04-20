@@ -4,10 +4,11 @@ import { MessageCircle, X, Send, Zap, Store } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
-export default function ChatWidget({ shop }) {
+export default function ChatWidget({ shop, autoOpen = false }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const autoOpenedRef = useRef(false);
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [presets, setPresets] = useState([]);
@@ -78,6 +79,13 @@ export default function ChatWidget({ shop }) {
   useEffect(() => {
     if (messages.length > 0) setShowPresets(false);
   }, [messages.length]);
+
+  useEffect(() => {
+    if (autoOpen && !autoOpenedRef.current && user && shop?.id && !(user.role === 'business' && user.id === shop.id)) {
+      autoOpenedRef.current = true;
+      openChat();
+    }
+  }, [autoOpen, user, shop?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const send = async (text) => {
     const body = (text ?? input).trim();

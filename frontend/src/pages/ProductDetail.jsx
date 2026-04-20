@@ -26,7 +26,7 @@ export default function ProductDetail() {
   useEffect(() => {
     setLoading(true);
     api.products.get(slug)
-      .then(d => { setData(d); setSelectedVariant(d.variants.length > 0 ? d.variants[0] : null); })
+      .then(d => { setData(d); setSelectedVariant(d.variants.length > 0 ? d.variants[0] : null); setSelectedImage(0); })
       .catch(() => navigate('/products'))
       .finally(() => setLoading(false));
   }, [slug]);
@@ -53,7 +53,10 @@ export default function ProductDetail() {
     ? product.price * (1 - product.deal_discount / 100)
     : product.price;
   const displayPrice = selectedVariant?.price || effectivePrice;
-  const allImages = product.images?.length > 0 ? product.images : [product.image_url];
+  const galleryImages = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+  const allImages = product.image_url
+    ? [product.image_url, ...galleryImages.filter(u => u !== product.image_url)]
+    : (galleryImages.length > 0 ? galleryImages : [product.image_url].filter(Boolean));
 
   const handleAddToCart = async () => {
     if (!user) { navigate('/login'); return; }

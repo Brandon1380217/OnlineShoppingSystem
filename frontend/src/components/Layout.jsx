@@ -2,14 +2,16 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { api } from '../api';
-import { ShoppingCart, User, Search, Menu, X, Package, LogOut, BarChart3, ChevronDown, Store, Bell, Heart, Shield, Globe } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, Package, LogOut, BarChart3, ChevronDown, Store, Bell, Heart, Shield, Globe, Sun, Moon } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const { cart } = useCart();
   const { currency, setCurrency, currencies } = useCurrency();
+  const { effective: themeEffective, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,63 +71,92 @@ export default function Layout({ children }) {
       setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: 1 } : n));
     }
     setNotifOpen(false);
-    if (notif.link) navigate(notif.link);
+    if (!notif.link) return;
+
+    const chatMatch = notif.link.match(/^\/chat\/(\d+)/);
+    if (chatMatch) {
+      const convId = chatMatch[1];
+      if (user?.role === 'business' || user?.role === 'admin') {
+        navigate(`/business?tab=messages&conversation=${convId}`);
+        return;
+      }
+      try {
+        const data = await api.chats.messages(convId);
+        const shopId = data.conversation?.business_id || data.other?.id;
+        if (shopId) {
+          navigate(`/shops/${shopId}?openChat=1`);
+          return;
+        }
+      } catch { /* fall through */ }
+      navigate('/');
+      return;
+    }
+
+    navigate(notif.link);
   };
 
   const isBusiness = user?.role === 'business' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+      <header className="bg-white dark:bg-neutral-900 shadow-sm dark:shadow-none border-b border-transparent dark:border-neutral-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center h-16 gap-4">
             <Link to="/" className="flex items-center gap-2 shrink-0">
-              <Store className="w-8 h-8 text-brand-600" />
-              <span className="text-xl font-bold text-brand-700 hidden sm:block">ShopEase</span>
+              <Store className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+              <span className="text-xl font-bold text-brand-700 dark:text-brand-300 hidden sm:block">ShopEase</span>
             </Link>
 
             <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
               <div className="relative">
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, brands, categories..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 text-sm" />
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500 text-sm" />
+                <Search className="w-4 h-4 text-gray-400 dark:text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </form>
 
             <nav className="hidden md:flex items-center gap-1">
-              <Link to="/products" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors">Products</Link>
-              <Link to="/shops" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors">Shops</Link>
-              {isBusiness && <Link to="/business" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors">Dashboard</Link>}
-              {isAdmin && <Link to="/admin" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors">Admin</Link>}
+              <Link to="/products" className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">Products</Link>
+              <Link to="/shops" className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">Shops</Link>
+              {isBusiness && <Link to="/business" className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">Dashboard</Link>}
+              {isAdmin && <Link to="/admin" className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">Admin</Link>}
             </nav>
 
             <div className="flex items-center gap-1">
+              {/* Theme toggle */}
+              <button onClick={toggleTheme}
+                className="p-2 text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                title={themeEffective === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label="Toggle theme">
+                {themeEffective === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+
               {/* Currency selector */}
               <div className="relative" ref={currencyRef}>
                 <button onClick={() => setCurrencyOpen(!currencyOpen)}
-                  className="flex items-center gap-1 px-2.5 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   title="Change currency">
                   <Globe className="w-4 h-4" />
                   <span className="hidden sm:block font-semibold">{currency}</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {currencyOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                    <p className="px-4 py-1 text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Display currency</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-gray-100 dark:border-neutral-800 py-2 z-50">
+                    <p className="px-4 py-1 text-[11px] uppercase tracking-wider text-gray-400 dark:text-neutral-500 font-semibold">Display currency</p>
                     {Object.values(currencies).map(c => (
                       <button key={c.code}
                         onClick={() => { setCurrency(c.code); setCurrencyOpen(false); }}
-                        className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === c.code ? 'text-brand-600 font-semibold bg-brand-50/40' : 'text-gray-700'}`}>
+                        className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors ${currency === c.code ? 'text-brand-600 dark:text-brand-400 font-semibold bg-brand-50/40 dark:bg-brand-900/20' : 'text-gray-700 dark:text-neutral-300'}`}>
                         <span className="flex items-center gap-2">
                           <span className="w-8 text-left">{c.symbol}</span>
                           <span>{c.code}</span>
                         </span>
-                        <span className="text-xs text-gray-400">{c.name}</span>
+                        <span className="text-xs text-gray-400 dark:text-neutral-500">{c.name}</span>
                       </button>
                     ))}
-                    <p className="px-4 pt-2 pb-1 text-[10px] text-gray-400 border-t border-gray-50 mt-1">Prices are stored in HKD and converted using static demo rates.</p>
+                    <p className="px-4 pt-2 pb-1 text-[10px] text-gray-400 dark:text-neutral-500 border-t border-gray-50 dark:border-neutral-800 mt-1">Prices are stored in HKD and converted using static demo rates.</p>
                   </div>
                 )}
               </div>
@@ -135,7 +166,7 @@ export default function Layout({ children }) {
                   {/* Notifications */}
                   <div className="relative" ref={notifRef}>
                     <button onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifications(); }}
-                      className="relative p-2 text-gray-600 hover:text-brand-600 transition-colors">
+                      className="relative p-2 text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                       <Bell className="w-5 h-5" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
@@ -144,20 +175,20 @@ export default function Layout({ children }) {
                       )}
                     </button>
                     {notifOpen && (
-                      <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-[70vh] flex flex-col">
-                        <div className="flex items-center justify-between px-4 py-3 border-b">
+                      <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-gray-100 dark:border-neutral-800 z-50 max-h-[70vh] flex flex-col">
+                        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-neutral-800">
                           <p className="font-semibold text-sm">Notifications</p>
-                          {unreadCount > 0 && <button onClick={markAllRead} className="text-xs text-brand-600 hover:underline">Mark all read</button>}
+                          {unreadCount > 0 && <button onClick={markAllRead} className="text-xs text-brand-600 dark:text-brand-400 hover:underline">Mark all read</button>}
                         </div>
                         <div className="overflow-y-auto flex-1">
                           {notifications.length === 0 ? (
-                            <p className="text-sm text-gray-500 text-center py-8">No notifications yet</p>
+                            <p className="text-sm text-gray-500 dark:text-neutral-400 text-center py-8">No notifications yet</p>
                           ) : notifications.map(n => (
                             <button key={n.id} onClick={() => handleNotifClick(n)}
-                              className={`w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-50 transition-colors ${!n.is_read ? 'bg-blue-50/50' : ''}`}>
-                              <p className={`text-sm ${!n.is_read ? 'font-semibold' : 'font-medium'} text-gray-900`}>{n.title}</p>
-                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                              <p className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                              className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-neutral-800 border-b border-gray-50 dark:border-neutral-800 transition-colors ${!n.is_read ? 'bg-blue-50/50 dark:bg-brand-900/20' : ''}`}>
+                              <p className={`text-sm ${!n.is_read ? 'font-semibold' : 'font-medium'} text-gray-900 dark:text-neutral-100`}>{n.title}</p>
+                              <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 dark:text-neutral-500 mt-1">{new Date(n.created_at).toLocaleString()}</p>
                             </button>
                           ))}
                         </div>
@@ -165,7 +196,7 @@ export default function Layout({ children }) {
                     )}
                   </div>
 
-                  <Link to="/cart" className="relative p-2 text-gray-600 hover:text-brand-600 transition-colors">
+                  <Link to="/cart" className="relative p-2 text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
                     <ShoppingCart className="w-5 h-5" />
                     {cart.summary.item_count > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">{cart.summary.item_count}</span>
@@ -174,36 +205,36 @@ export default function Layout({ children }) {
 
                   <div className="relative" ref={userMenuRef}>
                     <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                      className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                       <User className="w-4 h-4" />
                       <span className="hidden sm:block">{user.first_name}</span>
                       <ChevronDown className="w-3 h-3" />
                     </button>
                     {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                        <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-gray-100 dark:border-neutral-800 py-2 z-50">
+                        <div className="px-4 py-2 border-b border-gray-100 dark:border-neutral-800">
                           <p className="font-medium text-sm">{user.first_name} {user.last_name}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                          <span className="inline-block mt-1 px-2 py-0.5 bg-brand-50 text-brand-700 text-xs rounded-full capitalize">{user.role}</span>
+                          <p className="text-xs text-gray-500 dark:text-neutral-400">{user.email}</p>
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-xs rounded-full capitalize">{user.role}</span>
                         </div>
-                        <Link to="/orders" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>
+                        <Link to="/orders" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={() => setUserMenuOpen(false)}>
                           <Package className="w-4 h-4" /> Order History
                         </Link>
-                        <Link to="/following" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>
+                        <Link to="/following" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={() => setUserMenuOpen(false)}>
                           <Heart className="w-4 h-4" /> Following
                         </Link>
                         {isBusiness && (
-                          <Link to="/business" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>
+                          <Link to="/business" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={() => setUserMenuOpen(false)}>
                             <BarChart3 className="w-4 h-4" /> Business Dashboard
                           </Link>
                         )}
                         {isAdmin && (
-                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>
+                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800" onClick={() => setUserMenuOpen(false)}>
                             <Shield className="w-4 h-4" /> Admin Panel
                           </Link>
                         )}
                         <button onClick={() => { logout(); setUserMenuOpen(false); navigate('/'); }}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left">
                           <LogOut className="w-4 h-4" /> Sign Out
                         </button>
                       </div>
@@ -212,24 +243,24 @@ export default function Layout({ children }) {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors">Sign In</Link>
+                  <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Sign In</Link>
                   <Link to="/register" className="btn-primary text-sm !px-4 !py-2">Sign Up</Link>
                 </div>
               )}
-              <button className="md:hidden p-2 text-gray-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <button className="md:hidden p-2 text-gray-600 dark:text-neutral-300" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-100 py-3 space-y-1">
-              <Link to="/products" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Products</Link>
-              <Link to="/shops" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Shops</Link>
-              {user && <Link to="/orders" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Orders</Link>}
-              {user && <Link to="/following" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Following</Link>}
-              {isBusiness && <Link to="/business" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Dashboard</Link>}
-              {isAdmin && <Link to="/admin" className="block px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Admin</Link>}
+            <div className="md:hidden border-t border-gray-100 dark:border-neutral-800 py-3 space-y-1">
+              <Link to="/products" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Products</Link>
+              <Link to="/shops" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Shops</Link>
+              {user && <Link to="/orders" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Orders</Link>}
+              {user && <Link to="/following" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Following</Link>}
+              {isBusiness && <Link to="/business" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Dashboard</Link>}
+              {isAdmin && <Link to="/admin" className="block px-3 py-2 text-sm font-medium text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg">Admin</Link>}
             </div>
           )}
         </div>
